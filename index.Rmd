@@ -96,3 +96,7 @@ preds <- predict(fit, xtest)
 print(preds)
 ```
 As predicted, all of the 20 predictions were correct.
+
+References: 1. http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har
+
+2. https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md
