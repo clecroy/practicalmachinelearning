@@ -11,7 +11,10 @@ output: html_document
 For this project, we are tasked with developing a machine learning prediction model and applying it to 20 test cases with a minimum accuracy of 80%. 
 The data was recorded using a variety of wearable technology while individuals were performing a specific excercise. The individuals were instructed to perform the excercise in 5 different ways, only one of which is the correct way. Our model should be able to detect not only if the excercise was done correctly, but if not, how it was done incorrectly. We will start by loading the necessary packages and data.
 
-``` {r packagesdata}
+
+``` {r packagesdata, echo=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+knitr::opts_chunk$set(cache=TRUE)
 library(caret)
 library(readr)
 library(parallel)
@@ -24,7 +27,7 @@ testing <- read_csv("C:/Users/Chase/Documents/pml-testing.csv")
 #Exploratory Data Analysis
 A brief glance at the data seems to show there are many missign data points. I will write a function to count the number of NAs in each variable, then calcualte the percentage of missing data points. It turns out 100 of the variables have NAs, and most are more than 50% NA. These variables therefore do not contain much information on our outcome. In addition, we cannot use random forest with NAs in the data. I remove the NA-containing variables. We will also remove a simple index variable and the time stamp variables as they are likely to be unrelated to the excercse classification.
 
-```{r missingdat}
+```{r missingdat, echo=FALSE}
 nasums <- apply(training, 2, function(x) sum(is.na(x))==0)
 training2 <- training[ , nasums]
 training2 <- training2[ , c(-1,-3,-4,-5)]
@@ -34,7 +37,7 @@ testing2 <- testing2[ , c(-1,-3,-4,-5)]
 
 Now that we have gotten rid of the variables that are unlikely to be helpful, we can train our model on the training data. We will use random forest because of its generally high performance on nonlinear data. We will use 4-fold cross validation. This allows us to improve accuracy by training on 4 different subsamples. It will increase variance, but reduce bias.
 
-```{r preprecess}
+```{r preprecess, echo=FALSE}
 x <- training2[ , -53]
 x[, 1] <- factor(unlist(x[,1]))
 x[, 2] <- factor(unlist(x[,2]))
@@ -43,14 +46,14 @@ y <- factor(unname(unlist(training2[ , 53])))
 
 Random Forest models are very computationally intensive, so they take a long time to run. To improve this, we will implement parallel processing as suggested by course moderator Len Greski as in [here](https://github.com/lgreski/datasciencectacontent/blob/master/markdown/pml-randomForestPerformance.md).
 
-```{r parallelstart}
+```{r parallelstart, echo=FALSE}
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
 ```
 
 Finally we train the model using 4-fold cross validation as described above.
 
-```{r trainmodel}
+```{r trainmodel, echo=FALSE}
 fitControl <- trainControl(method = "cv",
                            number = 4,
                            allowParallel = TRUE)
@@ -62,27 +65,27 @@ fit$finalModel
 ```
 As can be seen from the confusion matrix above, the model performs extremely well with less than 0.4% error foreach classification result. Below, you can see that the accuracy for each resample is uniformly high.
 
-```{r foldresults}
+```{r foldresults, echo=FALSE}
 fit$resample[order(fit$resample$Accuracy, decreasing = TRUE),]
 ```
 
 Finally we will look at some plots of the model. Below, the plot shows that with only approximately 30 trees in our model the error rate has already decreased dramatically.
 
-```{r finalmodplot}
+```{r finalmodplot, eval=TRUE}
 plot(fit$finalModel, main ="Error vs. Number of Trees")
 ```
 The next plot shows that peak accuracy occurs with only 28 variables used. Using all variables actually decreases the accuracy, likely due to over fitting.
-```{r fitplot}
+```{r fitplot, eval=TRUE}
 plot(fit, main = "Accuracy vs. Number of Predictors")
 ```
 Finally, we plot relative variable importance. num_window, roll_belt, and pitch_forearm bring the Gini importance down by 1800. The next five decrease it by a more modest 600 or so.
-```{r varimpplot}
+```{r varimpplot, eval=TRUE}
 varImpPlot(fit$finalModel, main = "Relative Variable Importance")
 ```
 
 Given the extremely high accuracy of the model, I would estimate out of sample error to be less than 1 percent, and therefore should predict all 20 test cases corrrectly. For some reason, the levels of the two factor variables in the training set did not match those of the test set so I need to make the levels equivalent first.
 
-```{r prediction}
+```{r prediction, eval=TRUE}
 
 xtest <- testing2[ , -53]
 xtest[, 1] <- factor(unlist(xtest[,1]))
